@@ -21,11 +21,6 @@ import androidx.compose.ui.unit.sp
 import com.silentbridge.domain.model.ConnectionState
 import com.silentbridge.gesture.InferenceState
 import com.silentbridge.presentation.viewmodel.MainViewModel
-import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.ui.text.style.TextAlign
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -89,7 +84,7 @@ fun HomeScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("SilentBridge", fontWeight = FontWeight.Bold) },
+                title = { Text("SilentBridge") },
                 actions = {
                     IconButton(onClick = { showLanguageDialog = true }) {
                         Icon(Icons.Default.Translate, contentDescription = "Language")
@@ -138,34 +133,21 @@ fun HomeScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp, vertical = 8.dp),
+                .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Top: Connection Status
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 16.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
+            // Connection Status
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 val color = when (uiState.connectionState) {
-                    ConnectionState.CONNECTED -> Color(0xFF40a02b)
-                    ConnectionState.CONNECTING -> Color(0xFFdf8e1d)
-                    ConnectionState.DISCONNECTED, ConnectionState.ERROR -> Color(0xFFe64553)
-                    ConnectionState.SEARCHING -> Color(0xFF1e66f5)
+                    ConnectionState.CONNECTED -> Color.Green
+                    ConnectionState.CONNECTING -> Color.Yellow
+                    ConnectionState.DISCONNECTED -> Color.Red
+                    ConnectionState.ERROR -> Color.Red
+                    ConnectionState.SEARCHING -> Color.Blue
                 }
-                Surface(
-                    modifier = Modifier.size(12.dp),
-                    shape = CircleShape,
-                    color = color
-                ) {}
+                Surface(modifier = Modifier.size(10.dp), shape = androidx.compose.foundation.shape.CircleShape, color = color) {}
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = "Glove: ${uiState.connectionState.name}",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Text(text = "Glove: ${uiState.connectionState.name}", style = MaterialTheme.typography.labelMedium)
             }
 
             if (uiState.isDownloadingModel) {
@@ -173,156 +155,59 @@ fun HomeScreen(
                 Text("Downloading language pack...", style = MaterialTheme.typography.labelSmall)
             }
 
+            Spacer(modifier = Modifier.height(16.dp))
+
             if (uiState.connectionState != ConnectionState.CONNECTED) {
                 Button(onClick = onNavigateToDevices, modifier = Modifier.fillMaxWidth()) {
                     Text("Connect Glove")
                 }
             }
 
-            // Center: Sentence Focal Point
-            Box(
-                modifier = Modifier.weight(1f),
-                contentAlignment = Alignment.Center
-            ) {
-                if (uiState.isFormingSentence) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        CircularProgressIndicator(modifier = Modifier.size(48.dp))
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            "AI is translating...",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                } else if (uiState.sentenceError != null) {
-                    Card(
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
-                        shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text("Error", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onErrorContainer)
-                            Spacer(Modifier.height(8.dp))
-                            Text(text = uiState.sentenceError!!, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onErrorContainer)
-                            Spacer(Modifier.height(16.dp))
-                            OutlinedButton(onClick = { viewModel.clearSentence(); viewModel.clearBuffer() }) {
-                                Text("Clear")
-                            }
-                        }
-                    }
-                } else if (uiState.formedSentence != null) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .animateContentSize(),
-                        shape = RoundedCornerShape(24.dp),
-                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(Modifier.padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                            if (uiState.translatedSentence != null && uiState.targetLanguageCode != "en") {
-                                Text(
-                                    text = uiState.translatedSentence!!,
-                                    style = MaterialTheme.typography.headlineMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.primary,
-                                    textAlign = TextAlign.Center
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                HorizontalDivider(modifier = Modifier.padding(horizontal = 32.dp))
-                                Spacer(modifier = Modifier.height(16.dp))
-                            }
-                            
-                            Text(
-                                text = uiState.formedSentence!!,
-                                style = if (uiState.translatedSentence == null) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.titleMedium,
-                                fontWeight = if (uiState.translatedSentence == null) FontWeight.Bold else FontWeight.Normal,
-                                color = if (uiState.translatedSentence == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                                textAlign = TextAlign.Center
-                            )
+            Spacer(modifier = Modifier.height(16.dp))
 
-                            Row(Modifier.padding(top = 24.dp), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                                Button(onClick = { viewModel.speakSentence(context) }, modifier = Modifier.weight(1f)) {
-                                    Text("Speak", fontSize = 16.sp)
-                                }
-                                OutlinedButton(onClick = { viewModel.clearSentence(); viewModel.clearBuffer() }) {
-                                    Text("Clear")
-                                }
-                            }
-                        }
-                    }
-                } else {
-                    // Empty State
-                    Text(
-                        text = "Ready to translate...",
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
-                    )
-                }
-            }
-
-            // Word Buffer (Just below center)
+            // Word Buffer
             if (uiState.wordBuffer.isNotEmpty()) {
-                LazyRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp)
-                        .animateContentSize(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     itemsIndexed(uiState.wordBuffer) { index, word ->
                         AssistChip(
                             onClick = { viewModel.removeWordFromBuffer(index) },
-                            label = { Text(word, fontSize = 16.sp) },
-                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(16.dp)) },
-                            modifier = Modifier.padding(horizontal = 4.dp),
-                            shape = RoundedCornerShape(16.dp)
+                            label = { Text(word) },
+                            trailingIcon = { Icon(Icons.Default.Close, null, Modifier.size(14.dp)) }
                         )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            // Bottom: Gesture Recognition Card & Controls
+            // Gesture Recognition Card
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .animateContentSize(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                shape = RoundedCornerShape(16.dp)
+                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
             ) {
                 Column(Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(text = "Gesture: ${uiState.inferenceState.name}", style = MaterialTheme.typography.labelSmall)
+                    
                     if (uiState.gestureResult != null) {
-                        Text("Detected Gesture", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f))
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = uiState.gestureResult!!.gestureName,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = if (uiState.isWrongFlash) Color.Red else MaterialTheme.colorScheme.onSecondaryContainer
-                        )
+                        Text(text = uiState.gestureResult!!.gestureName, style = MaterialTheme.typography.headlineLarge, color = if (uiState.isWrongFlash) Color.Red else Color.Unspecified)
                         
                         if (uiState.showFeedbackButtons && !uiState.showCorrectionSelector) {
-                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(top = 12.dp)) {
-                                Button(onClick = { viewModel.onFeedbackYes() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF40a02b))) { Text("Correct") }
-                                Button(onClick = { viewModel.onFeedbackNo() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFe64553))) { Text("Wrong") }
+                            Row(horizontalArrangement = Arrangement.spacedBy(16.dp), modifier = Modifier.padding(top = 16.dp)) {
+                                Button(onClick = { viewModel.onFeedbackYes() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF40a02b))) { Text("YES") }
+                                Button(onClick = { viewModel.onFeedbackNo() }, colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFe64553))) { Text("NO") }
                             }
                         }
                     } else {
                         val statusText = when(uiState.inferenceState) {
-                            InferenceState.READY -> "Ready - Press START"
+                            InferenceState.READY -> "Ready - Press START to capture"
                             InferenceState.CALIBRATING -> "Calibrating (Keep Still)..."
                             InferenceState.RECORDING -> "Recording Gesture..."
-                            InferenceState.PREPROCESSING, InferenceState.MODEL_INFERENCE -> "Processing..."
+                            InferenceState.PREPROCESSING, InferenceState.MODEL_INFERENCE -> "Processing AI..."
                             InferenceState.DISCONNECTED -> "Connect Glove first"
                             else -> "Waiting..."
                         }
                         Text(
                             text = statusText,
                             style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer
+                            color = Color.Gray
                         )
                     }
                 }
@@ -330,42 +215,70 @@ fun HomeScreen(
 
             // Correction Selector
             if (uiState.showCorrectionSelector) {
-                LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.height(150.dp).padding(top = 8.dp)) {
+                LazyVerticalGrid(columns = GridCells.Fixed(3), modifier = Modifier.height(150.dp)) {
                     items(uiState.modelLabels + uiState.customLabels) { label ->
-                        FilterChip(
-                            selected = false,
-                            onClick = { viewModel.submitCorrectedLabel(label) },
-                            label = { Text(label, fontSize = 12.sp) },
-                            modifier = Modifier.padding(4.dp)
-                        )
+                        FilterChip(selected = false, onClick = { viewModel.submitCorrectedLabel(label) }, label = { Text(label, fontSize = 10.sp) })
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Sentence Section
+            if (uiState.isFormingSentence) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
+                    CircularProgressIndicator()
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("AI is forming sentence...", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                }
+            } else if (uiState.sentenceError != null) {
+                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("Error", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onErrorContainer)
+                        Text(text = uiState.sentenceError!!, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onErrorContainer)
+                        OutlinedButton(onClick = { viewModel.clearSentence(); viewModel.clearBuffer() }, modifier = Modifier.padding(top = 8.dp)) {
+                            Text("Clear")
+                        }
+                    }
+                }
+            } else if (uiState.formedSentence != null) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        Text("English:", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                        Text(text = uiState.formedSentence!!, style = MaterialTheme.typography.bodyLarge)
+                        
+                        if (uiState.translatedSentence != null && uiState.targetLanguageCode != "en") {
+                            HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                            Text("Translation:", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                            Text(text = uiState.translatedSentence!!, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
+                        }
+
+                        Row(Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Button(onClick = { viewModel.speakSentence(context) }, modifier = Modifier.weight(1f)) {
+                                Text("Speak")
+                            }
+                            OutlinedButton(onClick = { viewModel.clearSentence(); viewModel.clearBuffer() }) {
+                                Text("Clear")
+                            }
+                        }
                     }
                 }
             }
 
             // Controls
-            Row(
-                Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            Row(Modifier.padding(top = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (uiState.inferenceState == InferenceState.READY) {
                     Button(
                         onClick = { viewModel.startGestureSession() },
                         enabled = uiState.connectionState == ConnectionState.CONNECTED,
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(vertical = 16.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) { Text("START", fontSize = 16.sp, fontWeight = FontWeight.Bold) }
+                        modifier = Modifier.weight(1f)
+                    ) { Text("START") }
                 }
                 
                 if (viewModel.getTriggerModePublic() == "manual" && uiState.wordBuffer.isNotEmpty()) {
-                    Button(
-                        onClick = { viewModel.triggerSentenceFormation() },
-                        colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary),
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(vertical = 16.dp),
-                        shape = RoundedCornerShape(12.dp)
-                    ) { Text("DONE", fontSize = 16.sp, fontWeight = FontWeight.Bold) }
+                    Button(onClick = { viewModel.triggerSentenceFormation() }, colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)) {
+                        Text("DONE")
+                    }
                 }
             }
         }
