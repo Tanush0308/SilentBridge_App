@@ -3,3 +3,9 @@ build/
 *.iml  
 local.properties  
 .idea/ 
+
+# CodeLens Graph local index
+.codelens/
+slm_venv_310/
+.DS_Store
+slm_venv/

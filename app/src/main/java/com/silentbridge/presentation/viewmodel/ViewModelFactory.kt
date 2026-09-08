@@ -58,7 +58,9 @@ class ViewModelFactory(private val context: Context) : ViewModelProvider.Factory
             // We use the FallbackQwenRepository which produces natural sentences
             // (e.g. "I need water and food.") using the structured intent/objects parsed
             // by LanguageEngine — no model load, no thermal risk, no crashes.
-            val qwenRepository: QwenInferenceRepository = FallbackQwenRepository()
+            val modelManager = com.silentbridge.data.slm.ModelManager(context)
+            val modelPath = context.filesDir.absolutePath + "/qwen.task"
+            val qwenRepository: QwenInferenceRepository = com.silentbridge.data.repository.QwenInferenceRepositoryImpl(modelManager, modelPath)
 
             // Domain inference stack
             val interpreter = IntentInterpreter()
